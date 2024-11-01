@@ -1,20 +1,22 @@
 import { Link, useNavigate} from "react-router-dom";
 import { useState } from "react";
-
+import { useDispatch,useSelector } from "react-redux";
+import { signInStart, signInSuccess, signInFail } from "../redux/user/userSlice";
 
 export default function SignIn() {
-  const [formData, setFormData] = useState({});
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const { loading, error } = useSelector((state) => state.user);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      setLoading(true);
+      dispatch(signInStart());
       const res = await fetch("/api/auth/signin", {
         method: "POST",
         headers: {
@@ -24,18 +26,16 @@ export default function SignIn() {
       });
       const data = await res.json();
       if (data.success === false) {
-        setLoading(false);
-        setError(data.message);
+        dispatch(signInFail(data.message));
         return;
       }
-      setLoading(false);
-      setError(null);
+      dispatch(signInSuccess(data));
       navigate("/");
     } catch (error) {
-      setLoading(false);
-      setError(error.message);
+      dispatch(signInFail(error.message));
     }
   };
+
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl text-center font-semibold my-7">Sign In</h1>
@@ -46,6 +46,7 @@ export default function SignIn() {
           className="border p-3 rounded-lg"
           id="email"
           onChange={handleChange}
+          value={formData.email}
         />
         <input
           type="password"
@@ -53,6 +54,7 @@ export default function SignIn() {
           className="border p-3 rounded-lg"
           id="password"
           onChange={handleChange}
+          value={formData.password}
         />
         <button
           disabled={loading}
@@ -62,7 +64,7 @@ export default function SignIn() {
         </button>
       </form>
       <div className="flex gap-2 mt-5">
-        <p>Dont have an account?</p>
+        <p>Don't have an account?</p>
         <Link to={"/sign-up"}>
           <span className="text-blue-700">Sign Up</span>
         </Link>
